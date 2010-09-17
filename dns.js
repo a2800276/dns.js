@@ -1,14 +1,15 @@
-
+var dns = require('./dns_packet.js')
 
 
 var between = function(value, min, max) {
   return (value >= min) && (value <= max)
 }
 
-DNS = function (buffer) {
+DNSParser = function (buffer) {
   var self   = this
   var buffer = buffer
   var pos    = 0
+	this packet = new dns.packet()
 
   this.parse = function () {
     parseHeader()
@@ -16,35 +17,9 @@ DNS = function (buffer) {
     parseAnswer()
     parseAuthority()
     parseAdditional()
+		packet.complete = true
   }
 
-  this.toString = function() {
-    var string =
-    "id :"+self.header.id+"\n"+
-    "Flags :\n"+
-    " query  :"+self.query+"\n"+
-    " opcode :"+self.opcode+"\n"+
-    " aa     :"+self.authoritative_answer+"\n"+
-    " tc     :"+self.truncation+"\n"+
-    " rd     :"+self.recursion_desired+"\n"+
-    " ra     :"+self.recursion_available+"\n"+
-    " resp   :"+self.response+"\n"+
-    "qdcount :"+self.header.qdcount+"\n"+
-    "ancount :"+self.header.ancount+"\n"+
-    "nscount :"+self.header.nscount+"\n"+
-    "arcount :"+self.header.arcount+"\n"+
-    "\n"
-
-    for (var i=0; i!=self.header.qdcount; ++i) {
-      var q = self.questions[i]
-      string +=
-      "qname  :"+q.qname+"\n"+
-      "qtype  :"+q.qtype_name+" ("+q.qtype_desc+")"+"\n"+
-      "qclass :"+q.qclass_name+"\n"+
-      "\n"
-    }
-    return string
-  }
 
   var parseHeader = function () {
     var header = {}
@@ -57,68 +32,54 @@ DNS = function (buffer) {
 
     handleFlags(header.flags)
     self.header = header
+		this.packet.id = header.id
   }
 
   var handleFlags = function (header) {
+		var flags = this.packet.flags
 
-    header.qr = (header[0] & 0x80) >> 7
-    switch(header.qr) {
-      case 0 : self.query    = true
-               self.response = false
-               break
-      case 1 : self.query    = false
-               self.response = true
-    }
+    header.qr = (header[0] & 0x80) >>> 7
+		flags.query = (qr == 0)
 
-    header.opcode = (header[0] & 0x78) >> 3
+    header.opcode = (header[0] & 0x78) >>> 3
     switch ( header.opcode ){
-      case 0 : self.opcode = "QUERY"; break;
-      case 1 : self.opcode = "IQUERY"; break;
-      case 2 : self.opcode = "STATUS"; break;
-      case 4 : self.opcode = "NOTIFY"; break
-      case 5 : self.opcode = "UPDATE"; break
-      default: self.opcode = "Unassigned"; break;
+      case 0 : flags.opcode = "QUERY"; break;
+      case 1 : flags.opcode = "IQUERY"; break;
+      case 2 : flags.opcode = "STATUS"; break;
+      case 4 : flags.opcode = "NOTIFY"; break
+      case 5 : flags.opcode = "UPDATE"; break
+      default: flags.opcode = "Unassigned"; break;
     }
 
-    header.aa = (header[0] & 0x04) >> 2
-    if (header.aa == 1) {
-      self.authoritative_answer = true
-    }
+    header.aa = (header[0] & 0x04) >>> 2
+		flags.aa = (header.aa ==1)
 
-    header.tc = (header[0] & 0x02) >> 1
-    if (header.tc == 1) {
-      //we're fucked ...
-      self.truncation = true
-    }
+    header.tc = (header[0] & 0x02) >>> 1
+		flags.tc = (header.tc == 1)
 
     header.rd = (header[0] & 0x01)
+		flags.rd = (header.rd == 1)
 
-    if (header.rd == 1) {
-      self.recursion_desired = true
-    }
-
-    header.ra = (header[1] & 0x80) >> 7
-    if (header.ra == 1) {
-      self.recursion_available = true
-    }
+    header.ra = (header[1] & 0x80) >>> 7
+		flags.ra = header.ra == 1
 
     // header.zz -> ignore
     
     header.rcode = (header[1] & 0x0F) 
+		flags.rcode  = header.rcode
     switch ( header.rcode ) {
-      case 0 : self.response = "No error condition"; break
-      case 1 : self.response = "Format error"; break
-      case 2 : self.response = "Server failure"; break
-      case 3 : self.response = "Name Error"; break
-      case 4 : self.response = "Not Implemented"; break
-      case 5 : self.response = "Refused"; break
-      default: self.response = "RFU"; break
+      case 0 : flags.response = "No error condition"; break
+      case 1 : flags.response = "Format error"; break
+      case 2 : flags.response = "Server failure"; break
+      case 3 : flags.response = "Name Error"; break
+      case 4 : flags.response = "Not Implemented"; break
+      case 5 : flags.response = "Refused"; break
+      default: flags.response = "RFU"; break
     }
 
   }
 
   var parseQuestion = function () {
-    var questions = []
     for (var i =0; i!= self.header.qdcount; ++i) { // TODO
       var question        = {}
           question.qname  = parseQname()
@@ -128,9 +89,8 @@ DNS = function (buffer) {
       handleQtype (question)
       handleQclass(question)
       
-      questions.push(question)
+      packet.questions.push(question)
     }
-    self.questions = questions 
   }
 
   var parseQname = function () {
@@ -147,16 +107,13 @@ DNS = function (buffer) {
   }
 
   var parseAnswer = function () {
-    self.answers = []
-    parseRRs(self.answers, self.header.ancount)
+    parseRRs(self.packet.answers, self.header.ancount)
   }
   var parseAuthority = function () {
-    self.authorities = []
-    parseRRs(self.authorities, self.header.nscount)
+    parseRRs(self.packet.authorities, self.header.nscount)
   }
   var parseAdditional = function () {
-    self.additional = []
-    parseRRs(self.additional, self.header.arcount)
+    parseRRs(self.packet.additional, self.header.arcount)
   }
 
   var parseRRs = function (into, count) {
