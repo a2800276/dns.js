@@ -9,7 +9,7 @@ DNSParser = function (buffer) {
   var self   = this
   var buffer = buffer
   var pos    = 0
-	this packet = new dns.packet()
+	this.packet = new dns.packet()
 
   this.parse = function () {
     parseHeader()
@@ -17,7 +17,7 @@ DNSParser = function (buffer) {
     parseAnswer()
     parseAuthority()
     parseAdditional()
-		packet.complete = true
+		self.packet.complete = true
   }
 
 
@@ -32,14 +32,14 @@ DNSParser = function (buffer) {
 
     handleFlags(header.flags)
     self.header = header
-		this.packet.id = header.id
+		self.packet.id = header.id
   }
 
   var handleFlags = function (header) {
-		var flags = this.packet.flags
+		var flags = self.packet.flags
 
     header.qr = (header[0] & 0x80) >>> 7
-		flags.query = (qr == 0)
+		flags.query = (header.qr == 0)
 
     header.opcode = (header[0] & 0x78) >>> 3
     switch ( header.opcode ){
@@ -89,19 +89,18 @@ DNSParser = function (buffer) {
       handleQtype (question)
       handleQclass(question)
       
-      packet.questions.push(question)
+      self.packet.questions.push(question)
     }
   }
 
   var parseQname = function () {
-    var name = ""
+    var name = []
     while (true) {
       var len = take(1)
       if (len[0] == 0x00) {
         break;
       }
-      name += take(len[0]).toString('ascii');
-      name += "."
+      name.push( take(len[0]).toString('ascii') );
     }  
     return name
   }
@@ -579,24 +578,4 @@ DNSParser = function (buffer) {
 
   
 }
-
-//var dgram = require('dgram')
-//
-//var server = dgram.createSocket('udp4', function(msg, rinfo) {
-//
-//  console.log("msg.length:" + msg.length);
-//
-//  var dns = new DNS(msg)
-//      dns.parse()
-//
-//  console.log(dns.toString());
-//
-//})
-//
-//server.on("listening", function() {
-//    var addr = server.address()
-//    console.log("server listening on "+addr.address+":"+addr.port)
-//    process.setuid(process.getuid());
-//})
-//
-//server.bind(53)
+exports.parser = DNSParser

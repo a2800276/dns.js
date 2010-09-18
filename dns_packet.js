@@ -20,12 +20,13 @@ var DNSFlags = function () {
 }
 
 DNSPacket = function(){
-	this.complete   = false;
-	this.id         = -1;
-	this.flags      = new DNSFlags();
-	this.questions  = [];
-	this.answers    = [];
-	this.additional = [];
+	this.complete    = false;
+	this.id          = -1;
+	this.flags       = new DNSFlags();
+	this.questions   = [];
+	this.answers     = [];
+	this.authorities = [];
+	this.additional  = [];
 
 }
 DNSPacket.prototype.toString= function () {
@@ -36,17 +37,22 @@ DNSPacket.prototype.toString= function () {
 
     "questions : " + "\n"
 		for (var i in this.questions) {
-			string += questions[i]	
+			string += JSON.stringify(this.questions[i])
+			string += "\n"
 		}
 
     string += "answers : " + "\n"
 		for (var i in this.answers) {
-			string += answers[i]	
+			string += this.answers[i]	
+		}
+    string += "authorities : " + "\n"
+		for (var i in this.authorities) {
+			string += this.authorities[i]	
 		}
 
     string += "additional : " + "\n"
 		for (var i in this.additional) {
-			string += additional[i]	
+			string += this.additional[i]	
 		}
 		return string
 	}
