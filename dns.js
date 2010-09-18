@@ -9,15 +9,19 @@ DNSParser = function (buffer) {
   var self   = this
   var buffer = buffer
   var pos    = 0
+  var nameCache = {}
 	this.packet = new dns.packet()
 
-  this.parse = function () {
+  this.parse = function (callback) {
     parseHeader()
     parseQuestion()
     parseAnswer()
     parseAuthority()
     parseAdditional()
-		self.packet.complete = true
+    self.packet.complete = true
+    if (callback) {
+      callback(null, self.packet)
+    }
   }
 
 
@@ -41,15 +45,8 @@ DNSParser = function (buffer) {
     header.qr = (header[0] & 0x80) >>> 7
 		flags.query = (header.qr == 0)
 
-    header.opcode = (header[0] & 0x78) >>> 3
-    switch ( header.opcode ){
-      case 0 : flags.opcode = "QUERY"; break;
-      case 1 : flags.opcode = "IQUERY"; break;
-      case 2 : flags.opcode = "STATUS"; break;
-      case 4 : flags.opcode = "NOTIFY"; break
-      case 5 : flags.opcode = "UPDATE"; break
-      default: flags.opcode = "Unassigned"; break;
-    }
+    flags.opcode = (header[0] & 0x78) >>> 3
+     
 
     header.aa = (header[0] & 0x04) >>> 2
 		flags.aa = (header.aa ==1)
@@ -95,10 +92,17 @@ DNSParser = function (buffer) {
 
   var parseQname = function () {
     var name = []
+    var opos = pos
+    nameCache[pos] = name
     while (true) {
       var len = take(1)
       if (len[0] == 0x00) {
         break;
+      }
+      if ( (len[0] & 0xC0) != 0) {
+        var offset = take(1)[0]
+            offset |= (len[0] & ~0xC0) << 8
+        return nameCache[offset]
       }
       name.push( take(len[0]).toString('ascii') );
     }  
@@ -123,7 +127,7 @@ DNSParser = function (buffer) {
 
   var parseRR = function() {
     var rr = {}
-        rr.name     = parseName()
+        rr.name     = parseQname()
         rr.type     = u16() 
         rr.class    = u16()
         rr.ttl      = u32()

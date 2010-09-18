@@ -1,20 +1,22 @@
+var C = require('./dns_constants.js')
 
 var DNSFlags = function () {
-  this.query = null;
+  this.query  = null;
   this.opcode = null;
-  this.aa = null;
-  this.tc = null;
-  this.rd = null;
-  this.ra = null;
-	this.rcode = null;
+  this.aa     = null;
+  this.tc     = null;
+  this.rd     = null;
+  this.ra     = null;
+	this.rcode  = null;
 
 	this.toString = function () {
-		return "\nquery  : " + this.query +
-    "\nopcode : " + this.opcode +
-    "\naa     : " + this.aa +
-    "\ntc     : " + this.tc +
-    "\nrd     : " + this.rd +
-    "\nra     : " + this.ra +
+		return ""+ 
+    "\nquery   : " + this.query +
+    "\nopcode  : " + this.opcode + "("+C.opcode(this.opcode)+")"+
+    "\naa      : " + this.aa +
+    "\ntc      : " + this.tc +
+    "\nrd      : " + this.rd +
+    "\nra      : " + this.ra +
 		"\nrcode   : " + this.rcode 
 	}
 }
@@ -43,16 +45,19 @@ DNSPacket.prototype.toString= function () {
 
     string += "answers : " + "\n"
 		for (var i in this.answers) {
-			string += this.answers[i]	
+			string += JSON.stringify(this.answers[i])	
+      string += "\n"
 		}
     string += "authorities : " + "\n"
 		for (var i in this.authorities) {
-			string += this.authorities[i]	
+			string += JSON.stringify(this.authorities[i])
+      string += "\n"
 		}
 
     string += "additional : " + "\n"
 		for (var i in this.additional) {
-			string += this.additional[i]	
+			string += JSON.stringify(this.additional[i])
+      string += "\n"
 		}
 		return string
 	}
