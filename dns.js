@@ -10,7 +10,7 @@ DNSParser = function (buffer) {
   var buffer = buffer
   var pos    = 0
   var nameCache = {}
-	this.packet = new dns.packet()
+  this.packet = new dns.packet()
 
   this.parse = function (callback) {
     parseHeader()
@@ -22,6 +22,7 @@ DNSParser = function (buffer) {
     if (callback) {
       callback(null, self.packet)
     }
+    return self.packet
   }
 
 
@@ -36,34 +37,34 @@ DNSParser = function (buffer) {
 
     handleFlags(header.flags)
     self.header = header
-		self.packet.id = header.id
+    self.packet.id = header.id
   }
 
   var handleFlags = function (header) {
-		var flags = self.packet.flags
+    var flags = self.packet.flags
 
     header.qr = (header[0] & 0x80) >>> 7
-		flags.query = (header.qr == 0)
+    flags.query = (header.qr == 0)
 
     flags.opcode = (header[0] & 0x78) >>> 3
      
 
     header.aa = (header[0] & 0x04) >>> 2
-		flags.aa = (header.aa ==1)
+    flags.aa = (header.aa ==1)
 
     header.tc = (header[0] & 0x02) >>> 1
-		flags.tc = (header.tc == 1)
+    flags.tc = (header.tc == 1)
 
     header.rd = (header[0] & 0x01)
-		flags.rd = (header.rd == 1)
+    flags.rd = (header.rd == 1)
 
     header.ra = (header[1] & 0x80) >>> 7
-		flags.ra = header.ra == 1
+    flags.ra = header.ra == 1
 
     // header.zz -> ignore
     
     header.rcode = (header[1] & 0x0F) 
-		flags.rcode  = header.rcode
+    flags.rcode  = header.rcode
     switch ( header.rcode ) {
       case 0 : flags.response = "No error condition"; break
       case 1 : flags.response = "Format error"; break
