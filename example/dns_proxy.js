@@ -1,7 +1,7 @@
 
 var dgram = require('dgram'),
-      dns = require('./dns.js')
-      enc = require('./dns_encoder.js')
+      dns = require('../lib/dns.js')
+      enc = require('../lib/dns_encoder.js')
 
 var dumpPacket = function (msg, err, packet) {
   return function (err, packet) {
@@ -24,8 +24,12 @@ var server = dgram.createSocket('udp4', function(msg, rinfo) {
   var proxy = dgram.createSocket('udp4', function(pmsg, prinfo) {
     var rparser = new dns.parser(pmsg)
         rparser.parse(dumpPacket("Answer"))
-  
-    forward(server, pmsg, rinfo)
+    
+    var encoder = new enc.encoder(rparser.packet),
+        new_msg = encoder.encode()
+
+
+    forward(server, new_msg, rinfo)
   })
 
 
