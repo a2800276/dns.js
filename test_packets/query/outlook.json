@@ -1,0 +1,1 @@
+{"complete":true,"id":12708,"flags":{"query":true,"opcode":0,"aa":false,"tc":false,"rd":true,"ra":false,"rcode":0,"response":"No error condition"},"questions":[{"qname":["outlook","t-online","de",""],"qtype":28,"qclass":1,"qtype_name":"AAAA","qtype_desc":"IP6 Address [RFC3596]","qclass_name":"IN"}],"answers":[],"authorities":[],"additional":[]}

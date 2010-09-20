@@ -1,0 +1,1 @@
+{"complete":true,"id":25004,"flags":{"query":true,"opcode":0,"aa":false,"tc":false,"rd":true,"ra":false,"rcode":0,"response":"No error condition"},"questions":[{"qname":["images","apple","com",""],"qtype":1,"qclass":1,"qtype_name":"A","qtype_desc":"a host address [RFC1035]","qclass_name":"IN"}],"answers":[],"authorities":[],"additional":[]}
